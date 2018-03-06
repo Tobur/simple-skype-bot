@@ -2,13 +2,14 @@
 
 namespace SimpleSkypeBot;
 
-use SimpleSkypeBot\Exceptions\SimpleSkypeBotException;
+use SimpleSkypeBot\DependencyInjection\SimpleSkypeBotExtension;
+use Symfony\Component\HttpKernel\Bundle\Bundle;
 
-class SimpleSkypeBotBundle
+class SimpleSkypeBotBundle extends Bundle
 {
     public function getContainerExtension()
     {
-        return new SimpleSkypeBotException();
+        return new SimpleSkypeBotExtension();
     }
 }
 
