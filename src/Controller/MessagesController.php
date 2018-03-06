@@ -22,8 +22,9 @@ class MessagesController extends Controller
     ) {
         $authorization = $request->headers->get('authorization');
         $data = json_decode($request->getContent(), true);
-        //@TODO add check authorization token
+        //@TODO add validation check authorization token
         if (!empty($data) && !empty($authorization)) {
+            $logger->debug('Dispath event ' . NewMessageEvent::NAME);
             $eventDispatcher->dispatch(
                 NewMessageEvent::NAME,
                 new NewMessageEvent($data)
