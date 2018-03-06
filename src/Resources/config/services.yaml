@@ -1,0 +1,13 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        public: false
+
+    SimpleSkypeBot\:
+        resource: './../../*'
+        exclude: './../../{Model,Migrations,Tests,Kernel.php}'
+
+    SimpleSkypeBot\Controller\:
+        resource: './../../Controller'
+        tags: ['controller.service_arguments']
