@@ -12,6 +12,12 @@ services:
         resource: './../../Controller'
         tags: ['controller.service_arguments']
 
+    SimpleSkypeBot\Service\SkypeBotManager:
+        arguments:
+          - 'SimpleSkypeBot\Service\SkypeBotClient'
+          - '@doctrine.orm.entity_manager'
+          - '%simple_skype_bot.skype_user_class%'
+          - '%simply_skype_bot.skype_token_class%'
     SimpleSkypeBot\Service\SkypeBotClient:
         arguments:
             - '@logger'

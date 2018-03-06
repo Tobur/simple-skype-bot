@@ -26,6 +26,9 @@ class SimpleSkypeBotExtension extends Extension
         $container->setParameter('simply_skype_bot.bot_endpoint', $config['bot_endpoint']);
         $container->setParameter('simply_skype_bot.smba_endpoint', $config['smba_endpoint']);
 
+        $container->setParameter('simply_skype_bot.token_class', $config['token_class']);
+        $container->setParameter('simply_skype_bot.user_class', $config['user_class']);
+
         $loader = new Loader\YamlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.yaml');
     }

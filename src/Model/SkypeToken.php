@@ -34,7 +34,7 @@ class SkypeToken
     protected $expiresIn;
 
     /**
-     * @ORM\Column(type="string", name="access_token", nullable=false, unique=true)
+     * @ORM\Column(type="text", name="access_token", nullable=false)
      * @var string|null
      */
     protected $accessToken;

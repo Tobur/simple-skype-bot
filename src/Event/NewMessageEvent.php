@@ -2,6 +2,7 @@
 
 namespace SimpleSkypeBot\Event;
 
+use SimpleSkypeBot\DTO\MessageDTO;
 use Symfony\Component\EventDispatcher\Event;
 
 class NewMessageEvent extends Event
@@ -24,9 +25,9 @@ class NewMessageEvent extends Event
     /**
      * @return array
      */
-    public function getData(): array
+    public function getData(): MessageDTO
     {
-        return $this->data;
+        return new MessageDTO($this->data);
     }
 }
 

@@ -16,10 +16,10 @@ class Configuration implements ConfigurationInterface
         $rootNode = $treeBuilder->root('simple_skype_bot');
         $rootNode
             ->children()
-                ->scalarNode('skype_token_class')
+                ->scalarNode('token_class')
                     ->isRequired()
                 ->end()
-                ->scalarNode('skype_user_class')
+                ->scalarNode('user_class')
                     ->isRequired()
                 ->end()
                 ->scalarNode('client_id')
