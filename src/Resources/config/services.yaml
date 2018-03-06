@@ -11,3 +11,13 @@ services:
     SimpleSkypeBot\Controller\:
         resource: './../../Controller'
         tags: ['controller.service_arguments']
+
+    SimpleSkypeBot\Service\SkypeBotClient:
+        arguments:
+            - '@logger'
+            - '%simply_skype_bot.login_endpoint%'
+            - '%simply_skype_bot.bot_endpoint%'
+            - '%simply_skype_bot.smba_endpoint%'
+            - '%simply_skype_bot.client_id%'
+            - '%simply_skype_bot.client_secret%'
+            - '%simply_skype_bot.bot_secret_key%'
