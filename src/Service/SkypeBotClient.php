@@ -173,7 +173,9 @@ class SkypeBotClient
 
         $data = [
             'type' => 'message',
-            'recipient' => ['id' => 'sharamko_alexandr'],
+            'recipient' => [
+                'id' => $skypeUser->getSkypeLoginId() ? $skypeUser->getSkypeLoginId() : $skypeUser->getSkypeLogin()
+            ],
             'text' => $message,
         ];
 
