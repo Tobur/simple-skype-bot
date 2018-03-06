@@ -16,6 +16,12 @@ class Configuration implements ConfigurationInterface
         $rootNode = $treeBuilder->root('simple_skype_bot');
         $rootNode
             ->children()
+                ->scalarNode('skype_token_class')
+                    ->isRequired()
+                ->end()
+                ->scalarNode('skype_user_class')
+                    ->isRequired()
+                ->end()
                 ->scalarNode('client_id')
                     ->isRequired()
                 ->end()
@@ -35,12 +41,6 @@ class Configuration implements ConfigurationInterface
                 ->end()
                 ->scalarNode('smba_endpoint')
                     ->defaultValue('https://smba.trafficmanager.net')
-                    ->isRequired()
-                ->end()
-                ->scalarNode('skype_token_class')
-                    ->isRequired()
-                ->end()
-                ->scalarNode('skype_user_class')
                     ->isRequired()
                 ->end()
             ->end();
