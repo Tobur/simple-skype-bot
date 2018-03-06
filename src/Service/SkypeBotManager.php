@@ -56,7 +56,7 @@ class SkypeBotManager
     }
 
     /**
-     * @TODO lets get token from DB and catch 401 error 
+     * @TODO lets get token from DB and catch 401 error
      * @return SkypeToken
      * @throws SimpleSkypeBotException
      * @throws \Doctrine\ORM\ORMException
