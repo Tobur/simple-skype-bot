@@ -5,8 +5,8 @@ namespace SimpleSkypeBot\Controller;
 use Psr\Log\LoggerInterface;
 use SimpleSkypeBot\Event\NewMessageEvent;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Response;
 
 class MessagesController extends Controller
@@ -14,13 +14,16 @@ class MessagesController extends Controller
     /**
      * @param Request $request
      * @param LoggerInterface $logger
+     * @param EventDispatcher $eventDispatcher
+     * @return Response
      */
     public function index(
         Request $request,
         LoggerInterface $logger,
-        EventDispatcher $eventDispatcher
+        EventDispatcherInterface $eventDispatcher
     ) {
         $authorization = $request->headers->get('authorization');
+        $logger->debug('Authorization token: ' . $authorization);
         $data = json_decode($request->getContent(), true);
         //@TODO add validation check authorization token
         if (!empty($data) && !empty($authorization)) {
@@ -30,7 +33,6 @@ class MessagesController extends Controller
                 new NewMessageEvent($data)
             );
         }
-
         return new Response();
     }
 }
