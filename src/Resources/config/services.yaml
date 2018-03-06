@@ -14,10 +14,11 @@ services:
 
     SimpleSkypeBot\Service\SkypeBotManager:
         arguments:
-          - 'SimpleSkypeBot\Service\SkypeBotClient'
+          - '@SimpleSkypeBot\Service\SkypeBotClient'
           - '@doctrine.orm.entity_manager'
+          - '@logger'
           - '%simply_skype_bot.user_class%'
-          - '%simply_skype_bot.token_classs%'
+          - '%simply_skype_bot.token_class%'
     SimpleSkypeBot\Service\SkypeBotClient:
         arguments:
             - '@logger'

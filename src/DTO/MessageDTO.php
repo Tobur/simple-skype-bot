@@ -50,6 +50,7 @@ class MessageDTO
         $this->fromId = $data['from']['id'];
         $this->fromName = $data['from']['name'];
         $this->serviceUrl = $data['serviceUrl'];
+        $this->conversationId = $data['conversation']['id'];
     }
 
     /**

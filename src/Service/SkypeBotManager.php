@@ -3,7 +3,10 @@
 namespace SimpleSkypeBot\Service;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 use SimpleSkypeBot\DTO\MessageDTO;
+use SimpleSkypeBot\Model\SkypeToken;
+use SimpleSkypeBot\Model\SkypeUser;
 
 class SkypeBotManager
 {
@@ -27,14 +30,23 @@ class SkypeBotManager
      */
     protected $tokenClass;
 
+    /**
+     * @var LoggerInterface
+     */
+    protected $logger;
+
     public function __construct(
         SkypeBotClient $skypeBotClient,
         EntityManagerInterface $em,
+        LoggerInterface $logger,
         string $userClass,
         string $tokenClass
     ) {
         $this->skypeBotClient = $skypeBotClient;
         $this->em = $em;
+        $this->tokenClass = $tokenClass;
+        $this->userClass = $userClass;
+        $this->logger = $logger;
     }
 
     /**
@@ -47,12 +59,14 @@ class SkypeBotManager
      */
     public function sendReplyMessage(MessageDTO $messageDTO, string $message)
     {
+        $this->logger->debug('Start send message', [static::class]);
         $this->skypeBotClient->sendMessage(
             $this->getToken(),
             $this->getSkypeUser($messageDTO),
             $messageDTO->getServiceUrl(),
             $message
         );
+        $this->logger->debug('End send message', [static::class]);
     }
 
     /**
@@ -64,13 +78,13 @@ class SkypeBotManager
      */
     protected function getToken(): SkypeToken
     {
-        $data = $this->bot->createAuth2Token();
+        $data = $this->skypeBotClient->createAuth2Token();
         if (!isset($data['access_token'])) {
             throw new SimpleSkypeBotException('Token did not create!');
         }
         /** @var SkypeToken $skypeToken */
         $skypeToken = $this->em->getRepository($this->tokenClass)->findOneBy(
-            ['access_token' => $data['access_token']]
+            ['accessToken' => $data['access_token']]
         );
 
         if (empty($skypeToken)) {
@@ -96,10 +110,10 @@ class SkypeBotManager
      * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\OptimisticLockException
      */
-    protected function getSkypeUser(Message $message): SkypeUser
+    protected function getSkypeUser(MessageDTO $message): SkypeUser
     {
         $skypeUser = $this->em
-            ->getRepository(SkypeUser::class)
+            ->getRepository($this->userClass)
             ->findOneBy(['skypeLoginId' => $message->getFromId()]);
 
         if ($skypeUser) {
