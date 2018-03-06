@@ -1,0 +1,5 @@
+simple_skype_bot_api_endpoint:
+    path: /api/messages
+    controller: SimpleSkypeBot\Controller\MessagesController::index
+
+
