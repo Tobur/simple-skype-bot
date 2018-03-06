@@ -85,7 +85,7 @@ class SkypeBotClient
             'POST',
             '/common/oauth2/v2.0/token',
             [
-                RequestOptions::BODY => [
+                RequestOptions::FORM_PARAMS => [
                     'client_id' => $this->clientId,
                     'client_secret' => $this->clientSecret,
                     'grant_type' => 'client_credentials',
