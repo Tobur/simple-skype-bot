@@ -89,7 +89,7 @@ class SkypeBotClient
                     'client_id' => $this->clientId,
                     'client_secret' => $this->clientSecret,
                     'grant_type' => 'client_credentials',
-                    'scope' => 'https%3A%2F%2Fapi.botframework.com%2F.default'
+                    'scope' => 'https://api.botframework.com/.default'
                 ],
                 RequestOptions::HEADERS => [
                     'Content-Type' => 'application/x-www-form-urlencoded',
