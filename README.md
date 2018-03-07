@@ -30,8 +30,9 @@ For your bot you should setup api endpoint. For develop you can use http tunnel 
 ./ngrok http 80
 ```
 
-Like example for dev you can use: https://78bec8dc.ngrok.io/api/messages
-Add you bot to skype.
+Like example for dev you can use: https://somecode.ngrok.io/api/messages 
+
+Add you bot to skype. https://join.skype.com/bot/your-code-here
 
 Example how to handle messages
 
