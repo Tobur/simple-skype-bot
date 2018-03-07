@@ -67,13 +67,13 @@ class SkypeBotManager
      */
     public function sendMessage(MessageDTO $messageDTO)
     {
-        $this->logger->debug('Start send message', [static::class]);
+        $this->logger->debug('Start send message', [self::class]);
         $result = $this->skypeApiClient->sendConnectorMessage(
             $this->getAuth2Token(),
             $messageDTO
         );
 
-        $this->logger->debug('End send message', [static::class]);
+        $this->logger->debug('End send message', [self::class]);
 
         if (!empty($result['id'])) {
             $this->saveSkypeUser($messageDTO);

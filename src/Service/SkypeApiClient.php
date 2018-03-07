@@ -89,8 +89,8 @@ class SkypeApiClient
         } else {
             $serviceUrl = $messageDTO->getServiceUrl();
         }
-        $this->logger->debug(print_r($data, true), [static::class]);
-        $this->logger->debug(print_r($serviceUrl, true), [static::class]);
+        $this->logger->debug(print_r($data, true), [self::class]);
+        $this->logger->debug(print_r($serviceUrl, true), [self::class]);
 
         $client = new Client(['base_uri' => $serviceUrl]);
         $response = $client->request(
@@ -109,7 +109,7 @@ class SkypeApiClient
             ]
         );
 
-        $this->logger->debug($response->getBody(), [static::class, $response->getStatusCode()]);
+        $this->logger->debug($response->getBody(), [self::class, $response->getStatusCode()]);
 
         if ($response->getStatusCode() === Response::HTTP_CREATED) {
             return \GuzzleHttp\json_decode($response->getBody(), true);
@@ -145,7 +145,7 @@ class SkypeApiClient
             ]
         );
 
-        $this->logger->debug($response->getBody(), [static::class, $response->getStatusCode()]);
+        $this->logger->debug($response->getBody(), [self::class, $response->getStatusCode()]);
 
         if ($response->getStatusCode() === Response::HTTP_OK) {
             return \GuzzleHttp\json_decode($response->getBody(), true);

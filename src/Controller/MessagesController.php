@@ -35,7 +35,7 @@ class MessagesController extends Controller
         $logger->debug('Authorization token: ' . $authorization);
 
         $data = json_decode($request->getContent(), true);
-        $logger->debug(print_r($data, true), [static::class]);
+        $logger->debug(print_r($data, true), [self::class]);
 
 
         if (array_key_exists('type', $data) &&
