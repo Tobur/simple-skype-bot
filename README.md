@@ -7,6 +7,37 @@ composer require tobur/simple-skype-bot
 SimpleSkypeBot\SimpleSkypeBotBundle::class => ['all' => true]
 ```
 ```
+<?php
+
+namespace App\Entity;
+
+use Doctrine\ORM\Mapping as ORM;
+
+/**
+ * @ORM\Entity
+ * @ORM\Table(name="skype_token")
+ */
+class SkypeToken extends \SimpleSkypeBot\Model\SkypeToken
+{
+}
+```
+```
+<?php
+
+namespace App\Entity;
+
+use Doctrine\ORM\Mapping as ORM;
+
+/**
+ * @ORM\Entity
+ * @ORM\Table(name="skype_user")
+ */
+class SkypeUser extends \SimpleSkypeBot\Model\SkypeUser
+{
+}
+
+```
+```
 simple_skype_bot:
   token_class: 'App\Entity\SkypeToken'
   user_class: 'App\Entity\SkypeUser'
