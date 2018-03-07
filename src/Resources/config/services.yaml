@@ -12,14 +12,19 @@ services:
         resource: './../../Controller'
         tags: ['controller.service_arguments']
 
+    SimpleSkypeBot\Command\SendMessageCommand:
+        arguments: [null, '@SimpleSkypeBot\Service\SkypeBotManager']
+        tags:
+            - { name: 'console.command' }
+
     SimpleSkypeBot\Service\SkypeBotManager:
         arguments:
-          - '@SimpleSkypeBot\Service\SkypeBotClient'
+          - '@SimpleSkypeBot\Service\SkypeApiClient'
           - '@doctrine.orm.entity_manager'
           - '@logger'
           - '%simply_skype_bot.user_class%'
           - '%simply_skype_bot.token_class%'
-    SimpleSkypeBot\Service\SkypeBotClient:
+    SimpleSkypeBot\Service\SkypeApiClient:
         arguments:
             - '@logger'
             - '%simply_skype_bot.login_endpoint%'

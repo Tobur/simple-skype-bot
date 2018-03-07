@@ -10,7 +10,7 @@ use SimpleSkypeBot\Model\SkypeToken;
 use SimpleSkypeBot\Model\SkypeUser;
 use Symfony\Component\HttpFoundation\Response;
 
-class SkypeBotClient
+class SkypeApiClient
 {
     /**
      * @var string
@@ -113,27 +113,15 @@ class SkypeBotClient
      */
     public function createConversation(SkypeToken $token): array
     {
-        if ($token->getTokenType() === SkypeToken::API_TYPE_AUTH2) {
-            throw new SimpleSkypeBotException(
-                sprintf(
-                    'Create conversation support only %s token type.',
-                    SkypeToken::API_TYPE_DIRECT_LINE
-                )
-            );
-        }
-
         $client = new Client(['base_uri' => $this->botEndpoint]);
         $response = $client->request(
             'POST',
             '/v3/directline/conversations',
             [
-                RequestOptions::JSON => $data,
                 RequestOptions::HEADERS => [
-                    'Accept' => 'application/json',
                     'Authorization' => sprintf(
-                        '%s %s',
-                        $token->getTokenType(),
-                        $token->getAccessToken()
+                        'Bearer %s',
+                        $this->botSecretKey
                     )
                 ]
             ]
@@ -141,7 +129,7 @@ class SkypeBotClient
 
         $this->logger->debug($response->getBody(), [static::class, $response->getStatusCode()]);
 
-        if ($response->getStatusCode() === Response::HTTP_OK) {
+        if ($response->getStatusCode() === Response::HTTP_CREATED) {
             return \GuzzleHttp\json_decode($response->getBody(), true);
         }
 
@@ -173,6 +161,7 @@ class SkypeBotClient
 
         $data = [
             'type' => 'message',
+            'channelId' => 'skype',
             'recipient' => [
                 'id' => $skypeUser->getSkypeLoginId() ? $skypeUser->getSkypeLoginId() : $skypeUser->getSkypeLogin()
             ],
@@ -186,7 +175,7 @@ class SkypeBotClient
         $client = new Client(['base_uri' => $serviceUrl]);
         $response = $client->request(
             'POST',
-            'v3/conversations/' . $skypeUser->getConversationId() . '/activities/',
+            '/v3/conversations/' . $skypeUser->getConversationId() . '/activities/',
             [
                 RequestOptions::JSON => $data,
                 RequestOptions::HEADERS => [

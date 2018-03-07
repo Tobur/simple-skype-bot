@@ -72,7 +72,7 @@ class SkypeToken
     /**
      * @return \DateTime
      */
-    public function getExpiresIn(): \DateTime
+    public function getExpiresIn(): ?\DateTime
     {
         return $this->expiresIn;
     }
