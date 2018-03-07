@@ -13,7 +13,11 @@ services:
         tags: ['controller.service_arguments']
 
     SimpleSkypeBot\Command\SendMessageCommand:
-        arguments: [null, '@SimpleSkypeBot\Service\SkypeBotManager']
+        arguments:
+          - null
+          - '@SimpleSkypeBot\Service\SkypeBotManager'
+          - '@doctrine.orm.entity_manager'
+          - '%simply_skype_bot.user_class%'
         tags:
             - { name: 'console.command' }
 
@@ -28,8 +32,6 @@ services:
         arguments:
             - '@logger'
             - '%simply_skype_bot.login_endpoint%'
-            - '%simply_skype_bot.bot_endpoint%'
-            - '%simply_skype_bot.smba_endpoint%'
+            - '%simply_skype_bot.connector_endpoint%'
             - '%simply_skype_bot.client_id%'
             - '%simply_skype_bot.client_secret%'
-            - '%simply_skype_bot.bot_secret_key%'

@@ -9,9 +9,6 @@ use Doctrine\ORM\Mapping as ORM;
  */
 class SkypeToken
 {
-    const API_TYPE_AUTH2 = 'auth2';
-    const API_TYPE_DIRECT_LINE = 'direct_line';
-
     /**
      * @ORM\Id
      * @ORM\GeneratedValue
@@ -38,12 +35,6 @@ class SkypeToken
      * @var string|null
      */
     protected $accessToken;
-
-    /**
-     * @ORM\Column(type="string", name="api_type", nullable=false)
-     * @var string|null
-     */
-    protected $apiType;
 
     /**
      * @return int|null
@@ -99,22 +90,6 @@ class SkypeToken
     public function setAccessToken(?string $accessToken): void
     {
         $this->accessToken = $accessToken;
-    }
-
-    /**
-     * @return null|string
-     */
-    public function getApiType(): ?string
-    {
-        return $this->apiType;
-    }
-
-    /**
-     * @param null|string $apiType
-     */
-    public function setApiType(?string $apiType): void
-    {
-        $this->apiType = $apiType;
     }
 }
 

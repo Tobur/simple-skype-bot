@@ -5,7 +5,9 @@ namespace SimpleSkypeBot\Service;
 use GuzzleHttp\Client;
 use GuzzleHttp\RequestOptions;
 use Psr\Log\LoggerInterface;
-use SimpleSkypeBot\Exceptions\SImpleSkypeBotException;
+use SimpleSkypeBot\DTO\CoversationDTO;
+use SimpleSkypeBot\DTO\MessageDTO;
+use SimpleSkypeBot\Exceptions\SimpleSkypeBotException;
 use SimpleSkypeBot\Model\SkypeToken;
 use SimpleSkypeBot\Model\SkypeUser;
 use Symfony\Component\HttpFoundation\Response;
@@ -20,12 +22,12 @@ class SkypeApiClient
     /**
      * @var string
      */
-    protected $botEndpoint;
+    protected $directlineEndpoint;
 
     /**
      * @var string
      */
-    protected $smbaEndpoint;
+    protected $connectorEndpoint;
 
     /**
      * @var string
@@ -38,11 +40,6 @@ class SkypeApiClient
     protected $clientSecret;
 
     /**
-     * @var string
-     */
-    protected $botSecretKey;
-
-    /**
      * @var LoggerInterface
      */
     protected $logger;
@@ -50,132 +47,55 @@ class SkypeApiClient
     /**
      * @param LoggerInterface $logger
      * @param string $loginEndpoint
-     * @param string $botEndpoint
-     * @param string $smbaEndpoint
+     * @param string $connectorEndpoint
      * @param string $clientId
      * @param string $clientSecret
-     * @param string $botSecretKey
      */
     public function __construct(
         LoggerInterface $logger,
         string $loginEndpoint,
-        string $botEndpoint,
-        string $smbaEndpoint,
+        string $connectorEndpoint,
         string $clientId,
-        string $clientSecret,
-        string $botSecretKey
+        string $clientSecret
     ) {
         $this->clientId = $clientId;
         $this->clientSecret = $clientSecret;
-        $this->botEndpoint = $botEndpoint;
         $this->loginEndpoint = $loginEndpoint;
-        $this->botSecretKey = $botSecretKey;
-        $this->smbaEndpoint = $smbaEndpoint;
+        $this->connectorEndpoint = $connectorEndpoint;
 
         $this->logger = $logger;
     }
 
     /**
+     * @param SkypeToken $token
+     * @param MessageDTO $messageDTO
      * @return array
      */
-    public function createAuth2Token(): array
-    {
-         $client = new Client(['base_uri' => $this->loginEndpoint]);
-         $response = $client->request(
-            'POST',
-            '/common/oauth2/v2.0/token',
-            [
-                RequestOptions::FORM_PARAMS => [
-                    'client_id' => $this->clientId,
-                    'client_secret' => $this->clientSecret,
-                    'grant_type' => 'client_credentials',
-                    'scope' => 'https://api.botframework.com/.default'
-                ],
-                RequestOptions::HEADERS => [
-                    'Content-Type' => 'application/x-www-form-urlencoded',
-                    'Cache-Control' => 'no-cache'
-                ]
-            ]
-        );
-
-        $this->logger->debug($response->getBody(), [static::class, $response->getStatusCode()]);
-
-        if ($response->getStatusCode() === Response::HTTP_OK) {
-            return \GuzzleHttp\json_decode($response->getBody(), true);
-        }
-
-        return [];
-    }
-
-    /**
-     * @param SkypeToken $token
-     * @throws SimpleSkypeBotException
-     */
-    public function createConversation(SkypeToken $token): array
-    {
-        $client = new Client(['base_uri' => $this->botEndpoint]);
-        $response = $client->request(
-            'POST',
-            '/v3/directline/conversations',
-            [
-                RequestOptions::HEADERS => [
-                    'Authorization' => sprintf(
-                        'Bearer %s',
-                        $this->botSecretKey
-                    )
-                ]
-            ]
-        );
-
-        $this->logger->debug($response->getBody(), [static::class, $response->getStatusCode()]);
-
-        if ($response->getStatusCode() === Response::HTTP_CREATED) {
-            return \GuzzleHttp\json_decode($response->getBody(), true);
-        }
-
-        return [];
-    }
-
-    /**
-     * @param SkypeToken $token
-     * @param SkypeUser $skypeUser
-     * @param null|string $serviceUrl
-     * @param string $message
-     * @throws
-     * @return array
-     */
-    public function sendMessage(
+    public function sendConnectorMessage(
         SkypeToken $token,
-        SkypeUser $skypeUser,
-        ?string $serviceUrl,
-        string $message
+        MessageDTO $messageDTO
     ): array {
-        if ($token->getTokenType() === SkypeToken::API_TYPE_DIRECT_LINE) {
-            throw new SimpleSkypeBotException(
-                sprintf(
-                    'Create conversation support only %s token type.',
-                    SkypeToken::API_TYPE_AUTH2
-                )
-            );
-        }
-
         $data = [
             'type' => 'message',
             'channelId' => 'skype',
-            'recipient' => [
-                'id' => $skypeUser->getSkypeLoginId() ? $skypeUser->getSkypeLoginId() : $skypeUser->getSkypeLogin()
+            'from' => [
+                'id' => $messageDTO->getFromId()
             ],
-            'text' => $message,
+            'text' => $messageDTO->getText(),
         ];
 
-        if (!$serviceUrl) {
-            $serviceUrl = $this->smbaEndpoint;
+        if (!$messageDTO->getServiceUrl()) {
+            $serviceUrl = $this->connectorEndpoint;
+        } else {
+            $serviceUrl = $messageDTO->getServiceUrl();
         }
+        $this->logger->debug(print_r($data, true), [static::class]);
+        $this->logger->debug(print_r($serviceUrl, true), [static::class]);
 
         $client = new Client(['base_uri' => $serviceUrl]);
         $response = $client->request(
             'POST',
-            '/v3/conversations/' . $skypeUser->getConversationId() . '/activities/',
+            '/v3/conversations/' . $messageDTO->getConversationId() . '/activities/',
             [
                 RequestOptions::JSON => $data,
                 RequestOptions::HEADERS => [
@@ -191,7 +111,7 @@ class SkypeApiClient
 
         $this->logger->debug($response->getBody(), [static::class, $response->getStatusCode()]);
 
-        if ($response->getStatusCode() === Response::HTTP_OK) {
+        if ($response->getStatusCode() === Response::HTTP_CREATED) {
             return \GuzzleHttp\json_decode($response->getBody(), true);
         }
 
@@ -201,19 +121,27 @@ class SkypeApiClient
     /**
      * @return array
      */
-    public function generateDirectlineToken(): array
+    public function createAuth2Token(): array
     {
-        $client = new Client(['base_uri' => $this->botEndpoint]);
+        $client = new Client(['base_uri' => $this->loginEndpoint]);
+        $data = [
+            'client_id' => $this->clientId,
+            'client_secret' => $this->clientSecret,
+            'grant_type' => 'client_credentials',
+            'scope' => 'https://api.botframework.com/.default',
+        ];
+
+        $this->logger->debug(print_r($data, true), [self::class]);
+
         $response = $client->request(
             'POST',
-            '/v3/directline/tokens/generate',
+            '/common/oauth2/v2.0/token',
             [
+                RequestOptions::FORM_PARAMS => $data,
                 RequestOptions::HEADERS => [
-                    'Authorization' => sprintf(
-                        'Bearer %s',
-                        $this->botSecretKey
-                    )
-                ]
+                    'Content-Type' => 'application/x-www-form-urlencoded',
+                    'Cache-Control' => 'no-cache',
+                ],
             ]
         );
 

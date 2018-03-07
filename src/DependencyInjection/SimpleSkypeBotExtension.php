@@ -20,11 +20,8 @@ class SimpleSkypeBotExtension extends Extension
 
         $container->setParameter('simply_skype_bot.client_id', $config['client_id']);
         $container->setParameter('simply_skype_bot.client_secret', $config['client_secret']);
-        $container->setParameter('simply_skype_bot.bot_secret_key', $config['bot_secret_key']);
-
         $container->setParameter('simply_skype_bot.login_endpoint', $config['login_endpoint']);
-        $container->setParameter('simply_skype_bot.bot_endpoint', $config['bot_endpoint']);
-        $container->setParameter('simply_skype_bot.smba_endpoint', $config['smba_endpoint']);
+        $container->setParameter('simply_skype_bot.connector_endpoint', $config['connector_endpoint']);
 
         $container->setParameter('simply_skype_bot.token_class', $config['token_class']);
         $container->setParameter('simply_skype_bot.user_class', $config['user_class']);

@@ -2,6 +2,9 @@
 
 namespace SimpleSkypeBot\Command;
 
+use Doctrine\ORM\EntityManagerInterface;
+use SimpleSkypeBot\DTO\MessageDTO;
+use SimpleSkypeBot\Model\SkypeUser;
 use SimpleSkypeBot\Service\SkypeBotManager;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -17,10 +20,34 @@ class SendMessageCommand extends Command
      */
     protected $skypeBotManager;
 
-    public function __construct(?string $name = null, SkypeBotManager $skypeBotManager)
-    {
+    /**
+     * @var EntityManagerInterface
+     */
+    protected $entityManager;
+
+    /**
+     * @var string
+     */
+    protected $userClass;
+
+    /**
+     * SendMessageCommand constructor.
+     * @param null|string|null $name
+     * @param SkypeBotManager $skypeBotManager
+     * @param EntityManagerInterface $entityManager
+     * @param string $userClass
+     */
+    public function __construct(
+        ?string $name = null,
+        SkypeBotManager $skypeBotManager,
+        EntityManagerInterface $entityManager,
+        string $userClass
+    ) {
         parent::__construct($name);
+
         $this->skypeBotManager = $skypeBotManager;
+        $this->entityManager = $entityManager;
+        $this->userClass = $userClass;
     }
 
     protected function configure()
@@ -47,11 +74,30 @@ class SendMessageCommand extends Command
             '',
         ]);
 
-        $this->skypeBotManager->sendMessage(
-            $input->getArgument('login'),
-            $input->getArgument('message')
-        );
+        /** @var SkypeUser $skypeUser */
+        $skypeUser = $this->getEntityManager()->getRepository($this->userClass)
+            ->findOneBy(['skypeLogin' => $input->getArgument('login')]);
 
+        if (!$skypeUser) {
+           $output->writeln([
+                '',
+                'User with such login did not found!',
+                ''
+           ]);
+        }
+
+        $messageDTO = new MessageDTO([]);
+        $messageDTO->setConversationId($skypeUser->getConversationId());
+        $messageDTO->setText($input->getArgument('message'));
+        $messageDTO->setRecipientId($skypeUser->getSkypeLoginId());
+
+        $this->skypeBotManager->sendMessage($messageDTO);
+
+        $output->writeln([
+            '',
+            'Successfully send',
+            ''
+        ]);
     }
 
     /**
@@ -60,5 +106,13 @@ class SendMessageCommand extends Command
     public function getUserManager(): SkypeBotManager
     {
         return $this->skypeBotManager;
+    }
+
+    /**
+     * @return EntityManagerInterface
+     */
+    public function getEntityManager(): EntityManagerInterface
+    {
+        return $this->entityManager;
     }
 }

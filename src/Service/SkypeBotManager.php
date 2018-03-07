@@ -59,44 +59,29 @@ class SkypeBotManager
     }
 
     /**
-     * @param string $skypeLogin
-     * @param string $message
-     */
-    public function sendMessage(string $skypeLogin, string $message)
-    {
-        $this->logger->debug('Start send message', [static::class]);
-
-        $token = $this->getAuth2Token();
-        $coversation = $this->skypeApiClient->createConversation($token, $skypeLogin);
-        $coversationDTO = new CoversationDTO($coversation);
-        $this->skypeApiClient->sendMessage(
-            $this->getAuth2Token(),
-            $this->getSkypeUserByConversationDTO($coversationDTO, $skypeLogin),
-            null,
-            $message
-        );
-
-        $this->logger->debug('End send message', [static::class]);
-    }
-
-    /**
      * @param MessageDTO $message
-     * @param string $message
      * @throws SimpleSkypeBotException
      * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\OptimisticLockException
      * @throws \SimpleSkypeBot\Exceptions\SImpleSkypeBotException
      */
-    public function sendReplyMessage(MessageDTO $messageDTO, string $message)
+    public function sendMessage(MessageDTO $messageDTO)
     {
-        $this->logger->debug('Start send reply message', [static::class]);
-        $this->skypeApiClient->sendMessage(
+        $this->logger->debug('Start send message', [static::class]);
+        $result = $this->skypeApiClient->sendConnectorMessage(
             $this->getAuth2Token(),
-            $this->getSkypeUserByMessageDTO($messageDTO),
-            $messageDTO->getServiceUrl(),
-            $message
+            $messageDTO
         );
-        $this->logger->debug('End send reply message', [static::class]);
+
+        $this->logger->debug('End send message', [static::class]);
+
+        if (!empty($result['id'])) {
+            $this->saveSkypeUser($messageDTO);
+
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /**
@@ -113,10 +98,8 @@ class SkypeBotManager
         }
         /** @var SkypeToken $skypeToken */
         $skypeToken = $this->em->getRepository($this->tokenClass)->findOneBy(
-            [
-                'accessToken' => $data['access_token'],
-                'apiType' => SkypeToken::API_TYPE_AUTH2
-            ]
+            [],
+            ['id' => 'ASC']
         );
 
         if (empty($skypeToken)) {
@@ -132,7 +115,6 @@ class SkypeBotManager
         }
 
         $skypeToken->setAccessToken($data['access_token']);
-        $skypeToken->setApiType(SkypeToken::API_TYPE_AUTH2);
         $skypeToken->setTokenType($data['token_type']);
         $date->modify(sprintf('+%s seconds', $data['expires_in']));
         $skypeToken->setExpiresIn($date);
@@ -143,109 +125,58 @@ class SkypeBotManager
     }
 
     /**
-     * @return SkypeToken
+     * @param MessageDTO $messageDTO
      */
-    protected function getDirectLineToken()
+    protected function saveSkypeUser(MessageDTO $messageDTO)
     {
-        $data = $this->skypeApiClient->generateDirectlineToken();
-        if (!isset($data['token'])) {
-            throw new SimpleSkypeBotException('DirectlineToken did not create!');
-        }
-        /** @var SkypeToken $skypeToken */
-        $skypeToken = $this->em->getRepository($this->tokenClass)->findOneBy(
-            ['accessToken' => $data['token'], 'apiType' => SkypeToken::API_TYPE_DIRECT_LINE]
-        );
-
-        if (empty($skypeToken)) {
-            $skypeToken = new $this->tokenClass();
-            $this->em->persist($skypeToken);
-        }
-
-        $date = new \DateTime();
-
-        if (!empty($skypeToken->getExpiresIn()) &&
-            $date->getTimestamp() < $skypeToken->getExpiresIn()->getTimestamp()
-        ) {
-            return $skypeToken;
-        }
-
-        $skypeToken->setAccessToken($data['token']);
-        $skypeToken->setApiType(SkypeToken::API_TYPE_DIRECT_LINE);
-
-        $date->modify(sprintf('+%s seconds', $data['expires_in']));
-        $skypeToken->setExpiresIn($date);
-
+        $skypeUser = $this->findUserInDbByMessageDTO($messageDTO);
+        $skypeUser->setConversationId($messageDTO->getConversationId());
+        $skypeUser->setSkypeLoginId($messageDTO->getFromId());
         $this->em->flush();
-
-        return $skypeToken;
     }
 
+    /**
+     * @param string $skypeLogin
+     * @param string $skypeLoginId
+     * @return bool
+     */
+    public function setSkypeLogin(string $skypeLogin, string $skypeLoginId): bool
+    {
+        /** @var SkypeUser $skypeUser */
+        $skypeUser = $this->em->getRepository($this->userClass)->findOneBy(
+            ['skypeLoginId' => $skypeLoginId]
+        );
+
+        if (empty($skypeUser)) {
+            return false;
+        }
+
+        $skypeUser->setSkypeLogin($skypeLogin);
+        $this->em->flush();
+        $this->logger->debug('Setup user login ' . $skypeLogin, [self::class]);
+
+        return true;
+    }
 
     /**
-     * @param Message $data
+     * @param MessageDTO $messageDTO
      * @return SkypeUser
-     * @throws \Doctrine\ORM\ORMException
-     * @throws \Doctrine\ORM\OptimisticLockException
      */
-    protected function getSkypeUserByMessageDTO(MessageDTO $message): SkypeUser
+    protected function findUserInDbByMessageDTO(MessageDTO $messageDTO): SkypeUser
     {
-        $skypeUser = $this->em
-            ->getRepository($this->userClass)
-            ->findOneBy(['skypeLoginId' => $message->getFromId()]);
+        $skypeUser = $this->em->getRepository($this->userClass)->findOneBy(
+            [
+                'skypeLoginId' => $messageDTO->getFromId()
+            ],
+            ['id' => 'ASC']
+        );
 
         if ($skypeUser) {
-            $skypeUser->setConversationId($message->getConversationId());
-            $this->em->flush();
-
             return $skypeUser;
         }
 
         $skypeUser = new $this->userClass();
-        $skypeUser->setSkypeLoginId($message->getFromId());
-        $skypeUser->setSkypeName($message->getFromId());
-        $skypeUser->setConversationId($message->getConversationId());
-
         $this->em->persist($skypeUser);
-        $this->em->flush();
-
-        return $skypeUser;
-    }
-
-    /**
-     * @param CoversationDTO $coversationDTO
-     * @param string $skypeLogin
-     * @return SkypeUser
-     */
-    protected function getSkypeUserByConversationDTO(
-        CoversationDTO $coversationDTO,
-        string $skypeLogin
-    ): SkypeUser {
-        /** @var SkypeUser $skypeUser */
-        $skypeUser = $this->em
-            ->getRepository($this->userClass)
-            ->findOneBy(['conversationId' => $coversationDTO->getConversationId()]);
-
-        if ($skypeUser) {
-            $skypeUser->setSkypeLogin($skypeLogin);
-            $this->em->flush();
-
-            return $skypeUser;
-        }
-
-        /** @var SkypeUser $skypeUser */
-        $skypeUser = $this->em
-            ->getRepository($this->userClass)
-            ->findOneBy(['skypeLogin' => $skypeLogin]);
-
-
-        if (empty($skypeUser)) {
-            $skypeUser = new $this->userClass();
-            $skypeUser->setSkypeLogin($skypeLogin);
-            $this->em->persist($skypeUser);
-        }
-
-        $skypeUser->setConversationId($coversationDTO->getConversationId());
-        $this->em->flush();
 
         return $skypeUser;
     }
